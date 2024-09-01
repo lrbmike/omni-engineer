@@ -1,4 +1,7 @@
 openai
+google-generativeai
+groq
+ollama
 python-dotenv
 colorama
 duckduckgo-search

@@ -23,18 +23,24 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.application.current import get_app
+import model_helper
 
 is_diff_on = True
 
 init(autoreset=True)
 load_dotenv()
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-)
+# client = OpenAI(
+#     base_url="https://openrouter.ai/api/v1",
+#     api_key=os.getenv("OPENROUTER_API_KEY"),
+# )
 
-DEFAULT_MODEL = "anthropic/claude-3.5-sonnet"
-EDITOR_MODEL = "google/gemini-pro-1.5"
+# DEFAULT_MODEL = "anthropic/claude-3.5-sonnet"
+# EDITOR_MODEL = "google/gemini-pro-1.5"
+
+DEFAULT_PROVIDER = "gemini"
+DEFAULT_MODEL = "gemini-1.5-flash"
+EDITOR_MODEL = "gemini-1.5-pro"
+
 # Other common models:
 # "openai/gpt-4o-2024-08-06"
 # "meta-llama/llama-3.1-405b-instruct"
@@ -215,21 +221,31 @@ def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
     print(f"{style}{color}{text}{Style.RESET_ALL}", end=end)
 
 def get_streaming_response(messages, model):
-    try:
-        stream = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=True,
-        )
-        full_response = ""
-        for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                print_colored(chunk.choices[0].delta.content, end="")
-                full_response += chunk.choices[0].delta.content
-        return full_response.strip()
-    except Exception as e:
-        print_colored(f"Error in streaming response: {e}", Fore.RED)
-        return ""
+    stream = model_helper.get_llm_streaming_response(messages, "gemini", model)
+    full_response = ""
+    for chunk in stream:
+        print('get_streaming_response chunk', chunk)
+        if chunk.get('content'):
+            print_colored(chunk.get('content'), end="")
+            full_response += chunk.get('content')
+    return full_response.strip()
+
+# def get_streaming_response(messages, model):
+#     try:
+#         stream = client.chat.completions.create(
+#             model=model,
+#             messages=messages,
+#             stream=True,
+#         )
+#         full_response = ""
+#         for chunk in stream:
+#             if chunk.choices[0].delta.content is not None:
+#                 print_colored(chunk.choices[0].delta.content, end="")
+#                 full_response += chunk.choices[0].delta.content
+#         return full_response.strip()
+#     except Exception as e:
+#         print_colored(f"Error in streaming response: {e}", Fore.RED)
+#         return ""
 
 def read_file_content(filepath):
     try:
@@ -356,13 +372,19 @@ async def handle_edit_command(default_chat_history, editor_chat_history, filepat
             edited_lines = lines.copy()  # Create a copy to store edited lines
             line_index = 0
 
-            for chunk in client.chat.completions.create(
-                model=EDITOR_MODEL,
-                messages=editor_chat_history,
-                stream=True,
-            ):
-                if chunk.choices[0].delta.content:
-                    content = chunk.choices[0].delta.content
+            # for chunk in client.chat.completions.create(
+            #     model=EDITOR_MODEL,
+            #     messages=editor_chat_history,
+            #     stream=True,
+            # ):
+            #     if chunk.choices[0].delta.content:
+            #         content = chunk.choices[0].delta.content
+            #         print_colored(content, end="")
+            #         buffer += content
+            stream = model_helper.get_llm_streaming_response(messages=editor_chat_history, provider="gemini", model=EDITOR_MODEL)
+            for chunk in stream:
+                if chunk.get('content'):
+                    content = chunk.get('content')
                     print_colored(content, end="")
                     buffer += content
 
