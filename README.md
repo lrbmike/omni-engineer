@@ -22,9 +22,7 @@ def get_streaming_response(messages, model):
     return full_response.strip()
 ```
 
-- 
-
-- In `models` folder, you can define the model which you  want to use
+- In `models` folder, you can define the model which you want to use
 
 - In `model_helper.py`, You need to adapt to the model you have defined
 
@@ -50,7 +48,7 @@ def get_streaming_response(messages, model):
               yield chunk_item
   ```
 
-  
+  - Rename `.env.example` to `.env` , and add the `API_KEY` config what the model you use
 
 
 
