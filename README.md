@@ -15,7 +15,6 @@ def get_streaming_response(messages, model):
     stream = model_helper.get_llm_streaming_response(messages, "gemini", model)
     full_response = ""
     for chunk in stream:
-        print('get_streaming_response chunk', chunk)
         if chunk.get('content'):
             print_colored(chunk.get('content'), end="")
             full_response += chunk.get('content')
